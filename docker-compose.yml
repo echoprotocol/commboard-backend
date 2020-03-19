@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+
+  redis:
+    image: bitnami/redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - 127.0.0.1:36982:6379
+    restart: always
+
+  influxdb:
+    image: influxdb:alpine
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=${DATABASE_NAME}
+      - INFLUXDB_ADMIN_USER=${DATABASE_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${DATABASE_PASSWORD}
+    ports:
+      - '8086:8086'
+    restart: always
+
+volumes:
+  influxdb-storage:
