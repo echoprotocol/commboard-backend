@@ -7,7 +7,7 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
-      - 127.0.0.1:36982:6379
+      - ${REDIS_PORT}:6379
     restart: always
 
   influxdb:
@@ -19,7 +19,7 @@ services:
       - INFLUXDB_ADMIN_USER=${DATABASE_USERNAME}
       - INFLUXDB_ADMIN_PASSWORD=${DATABASE_PASSWORD}
     ports:
-      - '8086:8086'
+      - ${DATABASE_PORT}:8086
     restart: always
 
 volumes:
