@@ -14,6 +14,11 @@ def get_influxdb_client():
     )
 
 
+def initialize_influxdb_database():
+    influxdb_client = get_influxdb_client()
+    influxdb_client.create_database(DATABASE_NAME)
+
+
 def get_redis_client():
     return Redis(
         REDIS_HOST,
