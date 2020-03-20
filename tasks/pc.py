@@ -10,7 +10,7 @@ def update_pc_information():
 
     redis_client = get_redis_client()
     redis_client.set(
-        "free_space",
+        'free_space',
         str(free_space)
     )
 
@@ -18,17 +18,17 @@ def update_pc_information():
     time = str(datetime.utcnow())
     influxdb_points = [
         {
-            "measurement": "cpu",
-            "time": time,
-            "fields": {
-                "value": cpu
+            'measurement': 'cpu',
+            'time': time,
+            'fields': {
+                'value': cpu
             }
         },
         {
-            "measurement": "ram",
-            "time": time,
-            "fields": {
-                "value": ram
+            'measurement': 'ram',
+            'time': time,
+            'fields': {
+                'value': ram
             }
         }
     ]

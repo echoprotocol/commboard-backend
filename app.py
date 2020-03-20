@@ -24,10 +24,15 @@ celery_beat_schedule = {
     'update-pc-information': {
         'task': 'tasks.pc.update_pc_information',
         'schedule': 10.
+    },
+    'update-exchange-information': {
+        'task': 'tasks.rate.update_currencies_rate',
+        'schedule': 10.
     }
 }
 celery_include = [
-    'tasks.pc'
+    'tasks.pc',
+    'tasks.rate'
 ]
 
 celery = initialize_celery(
