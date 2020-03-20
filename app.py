@@ -1,10 +1,7 @@
 from flask import Flask
-from utils.db import initialize_influxdb_database
 from utils.celery import initialize_celery
 from config import REDIS_HOST, REDIS_PORT, CELERY_REDIS_DATABASE
 
-
-initialize_influxdb_database()
 
 app = Flask(__name__)
 

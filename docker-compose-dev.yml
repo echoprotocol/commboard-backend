@@ -2,6 +2,90 @@ version: '3'
 
 services:
 
+
+  bitcoin:
+    image: ruimarinho/bitcoin-core:0.18
+    command: "-printtoconsole -regtest=1 -rpcbind=0.0.0.0 -rpcallowip=0.0.0.0/0 -rpcuser=test -rpcpassword=test -deprecatedrpc=generate"
+    ports:
+      - '18443:18443'
+
+
+  ganache:
+    image: trufflesuite/ganache-cli:v6.8.2
+    entrypoint:
+      - node
+      - /app/ganache-core.docker.cli.js
+      - --account
+      - 0xda8e316c9e63e6725d93ebae25f923c567c4d7e9fbd2d1740a4e27d4a6094fab,100000000000000000000000000
+      - --account
+      - 0xda9e316c9e63e6725d93ebae25f923c567c4d7e9fbd2d1740a4e27d4a6094fab,100000000000000000000000000
+      - --gasLimit
+      - '8000000'
+      - --db
+      - /ganache_data
+      - --defaultBalanceEther
+      - --verbose
+      - '10000000'
+    ports:
+      - '56452:8545'
+    volumes:
+      - testrpc:/ganache_data
+
+
+  migrate:
+    image: echoprotocol/sidechain-smartcontracts:0.8.3
+    command: /bin/sh -c "sleep 5; npm run migrate -- --network docker;"
+    depends_on:
+      - ganache
+    volumes:
+      - ./genesis.json:/app/genesis.json
+
+
+  echo:
+    image: echoprotocol/echo:0.17.0-rc.2
+    hostname: 'echo'
+    command: '--data-dir=/echo/datadir/
+      --genesis-json=/echo/genesis.json
+      --plugins=sidechain,ethrpc
+      --rpc-endpoint=0.0.0.0:6311
+      --ethrpc-endpoint=0.0.0.0:8092
+      --start-echorand
+      --api-access=/echo/access.json
+      --account-info=[\"1.2.11\",\"5JkYKpRDWeY3DN4qjZRKpEfxCqmTX17fsBJhupE9DJVVmJoGh6C\"]
+      --account-info=[\"1.2.6\",\"5J6azg8iUcQEbxEaLAFrJbcdBjgKqewLF81A63NE4T2aeHCsKiE\"]
+      --account-info=[\"1.2.7\",\"5KaTLGtpGyCbod6hM2A9RETYcNn8CMR7e7LRKLi6DPDvnF1qxEm\"]
+      --account-info=[\"1.2.8\",\"5KJe2KY1yVnnBwXDtTDGfmnRGdUdR4HpLTUqpsG39h6VexYQwWH\"]
+      --account-info=[\"1.2.9\",\"5K3FJdakQUJvLon2dBxLNUwcHJbZxW6XBvc1AJKDCiGHPyXZadz\"]
+      --account-info=[\"1.2.10\",\"5JMgujU9Zmz85buhkPQyEMXLvK7FZ6giSLjRT25uf1tpV6uPULS\"]
+      --sidechain-eth-committeeman=[\"1.2.6\",\"942c314672a5cba316dc03764ea5256ed9302f7704c2dd14db1f40c962accfd9\"]
+      --sidechain-eth-committeeman=[\"1.2.7\",\"1e3868b734ac73c6676fd4f5687b0b31d98bd53621bd50e4124906a7d50b1e43\"]
+      --sidechain-eth-committeeman=[\"1.2.8\",\"05a00856ddf2527e21249c22a351a093eb40e70732e4e327c01ca07587629138\"]
+      --sidechain-eth-committeeman=[\"1.2.9\",\"770be2d7d5063fecfd6322f496865d327e11fabdacfdb6e548a6e347234e5821\"]
+      --sidechain-eth-committeeman=[\"1.2.10\",\"f3d900b6ade55834ae039f06390e92f8215e45cdf42faf8d34a005636e944b38\"]
+      --registrar-account=\"1.2.8\"
+      --eth-rpc-ip=ganache
+      --eth-rpc-port=8545
+      --sidechain-btc-testnet
+      --sidechain-btc-committeeman=[\"1.2.6\",\"cNgp6gWXaaokgzVRQ9m3zrkgQictzYyTBkw3prrUKadHfedT1Azg\"]
+      --sidechain-btc-committeeman=[\"1.2.7\",\"cNCcK7tKptYBZc6LXQVVhU33xFNLf8K9FNKdeToYioH8DBGLPjFq\"]
+      --sidechain-btc-committeeman=[\"1.2.8\",\"cMfvqZL27R5o7bhCRop3QBMezeUyL6h7KhUcpT2cmVW8Ftjo1Aup\"]
+      --sidechain-btc-committeeman=[\"1.2.9\",\"cSBuEeeysRAMkXt1A8aubynVPaP14VGAW6iULYWSUFpGXBj3Byg3\"]
+      --sidechain-btc-committeeman=[\"1.2.10\",\"cVqYxKMybncNeQ2YQ4wyyUi6PzD5ttJHUuATB8XUvb3AjdAJnNEp\"]
+      --btc-rpc-ip=bitcoin
+      --btc-rpc-port=18443
+      --btc-rpc-user=test
+      --btc-rpc-password=test'
+    ports:
+      - 56451:6311
+      - 56454:8092
+    volumes:
+      - ./genesis.json:/echo/genesis.json
+      - echo-logs:/echo/datadir/logs
+    depends_on:
+      - migrate
+      - bitcoin
+
+
   redis:
     image: bitnami/redis
     environment:
@@ -16,11 +100,65 @@ services:
       - influxdb-storage:/var/lib/influxdb
     environment:
       - INFLUXDB_DB=${DATABASE_NAME}
-      - INFLUXDB_ADMIN_USER=${DATABASE_USERNAME}
-      - INFLUXDB_ADMIN_PASSWORD=${DATABASE_PASSWORD}
+      - INFLUXDB_ADMIN_USER=${DATABASE_USER_NAME}
+      - INFLUXDB_ADMIN_PASSWORD=${DATABASE_USER_PASSWORD}
     ports:
       - ${DATABASE_PORT}:8086
     restart: always
 
+
+  celery:
+    build: .
+    command: python3 run_service.py celery
+    environment:
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER_NAME=${DATABASE_USER_NAME}
+      - DATABASE_USER_PASSWORD=${DATABASE_USER_PASSWORD}
+      - DATABASE_HOST=influxdb
+      - DATABASE_PORT=8086
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DATABASE=${REDIS_DATABASE}
+      - CELERY_REDIS_DATABASE=${CELERY_REDIS_DATABASE}
+      - COINMARKETCAP_API_URL=${COINMARKETCAP_API_URL}
+      - COINMARKETCAP_API_KEY=${COINMARKETCAP_API_KEY}
+      - ECHO_URL=echo:6311
+    restart: always
+    volumes:
+      - echo-logs:/app/echo-logs/
+    depends_on:
+      - influxdb
+      - redis
+      - echo
+
+
+  web:
+    build: .
+    command: python3 run_service.py web
+    environment:
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER_NAME=${DATABASE_USER_NAME}
+      - DATABASE_USER_PASSWORD=${DATABASE_USER_PASSWORD}
+      - DATABASE_HOST=influxdb
+      - DATABASE_PORT=8086
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DATABASE=${REDIS_DATABASE}
+      - CELERY_REDIS_DATABASE=${CELERY_REDIS_DATABASE}
+      - COINMARKETCAP_API_URL=${COINMARKETCAP_API_URL}
+      - COINMARKETCAP_API_KEY=${COINMARKETCAP_API_KEY}
+      - ECHO_URL=echo:6311
+    restart: always
+    volumes:
+      - echo-logs:/app/echo-logs/
+    depends_on:
+      - influxdb
+      - redis
+      - celery
+
+
+
 volumes:
+  testrpc:
+  echo-logs:
   influxdb-storage:

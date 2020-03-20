@@ -43,3 +43,8 @@ COINMARKETCAP_API_URL = os.environ['COINMARKETCAP_API_URL']
 if 'COINMARKETCAP_API_KEY' not in os.environ:
     raise Exception("Not found 'COINMARKETCAP_API_KEY' in environment")
 COINMARKETCAP_API_KEY = os.environ['COINMARKETCAP_API_KEY']
+
+
+if 'ECHO_URL' not in os.environ:
+    raise Exception("Not found 'ECHO_URL' in environment")
+ECHO_URL = os.environ['ECHO_URL']
