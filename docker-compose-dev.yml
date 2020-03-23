@@ -42,7 +42,7 @@ services:
 
 
   echo:
-    image: echoprotocol/echo:0.17.0-rc.2
+    image: echoprotocol/echo:0.17.1-rc.8
     hostname: 'echo'
     command: '--data-dir=/echo/datadir/
       --genesis-json=/echo/genesis.json
