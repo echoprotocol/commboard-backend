@@ -82,7 +82,7 @@ services:
       - ./genesis.json:/echo/genesis.json
       - echo-logs:/echo/datadir/logs
     depends_on:
-      - migrate
+      - ganache
       - bitcoin
 
 
@@ -122,7 +122,7 @@ services:
       - CELERY_REDIS_DATABASE=${CELERY_REDIS_DATABASE}
       - COINMARKETCAP_API_URL=${COINMARKETCAP_API_URL}
       - COINMARKETCAP_API_KEY=${COINMARKETCAP_API_KEY}
-      - ECHO_URL=echo:6311
+      - ECHO_URL=ws://echo:6311/ws
     restart: always
     volumes:
       - echo-logs:/app/echo-logs/
@@ -147,8 +147,10 @@ services:
       - CELERY_REDIS_DATABASE=${CELERY_REDIS_DATABASE}
       - COINMARKETCAP_API_URL=${COINMARKETCAP_API_URL}
       - COINMARKETCAP_API_KEY=${COINMARKETCAP_API_KEY}
-      - ECHO_URL=echo:6311
+      - ECHO_URL=ws://echo:6311/ws
     restart: always
+    ports:
+      - 5000:5000
     volumes:
       - echo-logs:/app/echo-logs/
     depends_on:
