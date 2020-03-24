@@ -1,9 +1,8 @@
 import os
 import time
 import argparse
-from echopy import Echo
 from utils.db import get_influxdb_client, get_redis_client
-from config import ECHO_URL
+from utils.echo import get_echo_client
 
 
 def ping(client):
@@ -13,20 +12,20 @@ def ping(client):
         return None
 
 
-def get_head_block_num(echo):
+def get_echo_head_block_num():
     try:
-        echo.connect(ECHO_URL)
+        echo = get_echo_client()
         return echo.api.database.get_dynamic_global_properties()["head_block_number"]
     except Exception:
         return None
 
 
-def run(echo, influxdb, redis, command):
-    if ping(influxdb) and ping(redis) and get_head_block_num(echo):
+def run(influxdb, redis, command):
+    if ping(influxdb) and ping(redis) and get_echo_head_block_num():
         os.system(command)
     else:
         time.sleep(1)
-        run(echo, influxdb, redis, command)
+        run(influxdb, redis, command)
 
 
 parser = argparse.ArgumentParser()
@@ -35,11 +34,9 @@ args = parser.parse_args()
 
 influxdb_client = get_influxdb_client()
 redis_client = get_redis_client()
-echo = Echo()
 
 command = 'flask run' if args.service == 'web' else 'celery -A app.celery worker -l debug -B'
 run(
-    echo,
     influxdb_client,
     redis_client,
     command
