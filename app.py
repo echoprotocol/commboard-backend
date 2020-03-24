@@ -20,16 +20,22 @@ app.config.update(
 celery_beat_schedule = {
     'update-pc-information': {
         'task': 'tasks.pc.update_pc_information',
-        'schedule': 10.
+        'schedule': 60.
     },
     'update-exchange-information': {
         'task': 'tasks.rate.update_currencies_rate',
+        'schedule': 60.
+    },
+    'update-node-information': {
+        'task': 'tasks.node.update_node_information',
         'schedule': 10.
-    }
+    },
 }
+
 celery_include = [
     'tasks.pc',
-    'tasks.rate'
+    'tasks.rate',
+    'tasks.node',
 ]
 
 celery = initialize_celery(

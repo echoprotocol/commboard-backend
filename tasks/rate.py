@@ -7,11 +7,9 @@ from app import celery
 def update_currencies_rate():
     currencies_rate = get_rate()
     redis_client = get_redis_client()
-    redis_client.set(
-        'BTC',
-        str(currencies_rate['BTC']['quote']['USD']['price'])
-    )
-    redis_client.set(
-        'ETH',
-        str(currencies_rate['BTC']['quote']['USD']['price'])
-    )
+    for asset in ['BTC', 'ETH']:
+        redis_client.set(
+            asset.lower(),
+            str(currencies_rate[asset]['quote']['USD']['price']),
+            ex=90
+        )

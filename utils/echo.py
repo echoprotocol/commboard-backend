@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 from glob import glob
+import docker
 from echopy import Echo
 from config import ECHO_URL
 
@@ -9,6 +10,22 @@ def get_echo_client():
     echo = Echo()
     echo.connect(ECHO_URL)
     return echo
+
+
+def get_echo_head_block_num():
+    echo = get_echo_client()
+    return echo.api.database.get_dynamic_global_properties()['head_block_number']
+
+
+def get_echo_node_uptime():
+    docker_client = docker.from_env()
+    containers = docker_client.api.containers()
+    for container in containers:
+        if 'echoprotocol/echo' in container['Image']:
+            created_datetime = datetime.fromtimestamp(container['Created'])
+            current_datetime = datetime.now()
+            timedelta = current_datetime - created_datetime
+            return timedelta.total_seconds() / 86400
 
 
 def initialize_echo_committee_operations():
@@ -46,7 +63,11 @@ def inspect_operation(echo, full_operation, committee_operations):
         if operation_id == echo.config.operation_ids.PROPOSAL_CREATE:
             result_operations = []
             for op in operation['proposed_ops']:
-                inspection_result = inspect_operation(echo, op["op"], committee_operations)
+                inspection_result = inspect_operation(
+                    echo,
+                    op['op'],
+                    committee_operations
+                )
                 if inspection_result:
                     result_operations.extend(inspection_result)
             return result_operations
@@ -59,13 +80,18 @@ def inspect_block_for_committee_operations(block_num):
     block = echo.api.database.get_block(block_num)
     block_timestamp = block['timestamp']
     logs = []
+    result = {}
     for tx in block['transactions']:
         for operation in tx['operations']:
-            inspection_result = inspect_operation(echo, operation, committee_operations)
+            inspection_result = inspect_operation(
+                echo,
+                operation,
+                committee_operations
+            )
             logs.extend(inspection_result)
-    if len(logs):
-        return {block_timestamp: logs}
-    return None
+    if logs:
+        result.update({block_timestamp: logs})
+    return result
 
 
 def get_date(date):
