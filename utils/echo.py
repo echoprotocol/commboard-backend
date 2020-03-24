@@ -1,3 +1,6 @@
+import math
+from datetime import datetime
+from glob import glob
 from echopy import Echo
 from config import ECHO_URL
 
@@ -63,3 +66,39 @@ def inspect_block_for_committee_operations(block_num):
     if len(logs):
         return {block_timestamp: logs}
     return None
+
+
+def get_date(date):
+    date = datetime.fromisoformat(date)
+    return date.strftime("%Y%m%dT%H")
+
+
+def compare_date(date, first_log):
+    first_log = first_log[first_log.rfind("."):]
+    first_log_date = datetime.strptime(first_log, "%Y%m%dT%H%M%S")
+    date = datetime.fromisoformat(date)
+    return first_log_date < date
+
+
+def get_logs(logs_dir, logs_from=None, length=math.inf):
+    logs_files = glob('./echo-logs/{}/*'.format(logs_dir))
+    logs_files.sort()
+    logs = []
+    logs_files = logs_files[1:]
+    if logs_from and compare_date(logs_files[0]):
+        logs_from = get_date(logs_from)
+        for idx, log in enumerate(logs_files):
+            if logs_from in log:
+                logs_files = logs_files[idx:]
+    for i in range(len(logs_files)):
+        logs_file = open(logs_files[-(1 + i)])
+        lines = logs_file.readlines()
+        if length < len(lines):
+            lines = lines[len(lines) - length:]
+            lines.extend(logs)
+            logs = lines
+            break
+        length -= len(lines)
+        lines.extend(logs)
+        logs = lines
+    return logs
