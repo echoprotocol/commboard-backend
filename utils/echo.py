@@ -1,7 +1,7 @@
+import os
 import math
 from datetime import datetime
 from glob import glob
-import docker
 from echopy import Echo
 from config import ECHO_URL
 
@@ -18,17 +18,15 @@ def get_echo_head_block_num():
 
 
 def get_echo_node_uptime():
-    docker_client = docker.from_env()
-    containers = docker_client.api.containers()
-    for container in containers:
-        if 'echoprotocol/echo' in container['Image']:
-            created_datetime = datetime.fromtimestamp(container['Created'])
-            current_datetime = datetime.now()
-            timedelta = current_datetime - created_datetime
-            return timedelta.total_seconds() / 86400
+    logs_creation_datetime = datetime.fromtimestamp(
+        os.path.getctime('echo-logs')
+    )
+    current_datetime = datetime.now()
+    timedelta = current_datetime - logs_creation_datetime
+    return timedelta.total_seconds() / 86400
 
 
-def initialize_echo_committee_operations():
+def _initialize_echo_committee_operations():
     echo = get_echo_client()
     committee_operations = [
         echo.config.operation_ids.COMMITTEE_MEMBER_CREATE,
@@ -57,13 +55,13 @@ def initialize_echo_committee_operations():
     return echo, committee_operations
 
 
-def inspect_operation(echo, full_operation, committee_operations):
+def _inspect_operation(echo, full_operation, committee_operations):
     operation_id, operation = full_operation
     if operation_id in committee_operations:
         if operation_id == echo.config.operation_ids.PROPOSAL_CREATE:
             result_operations = []
             for op in operation['proposed_ops']:
-                inspection_result = inspect_operation(
+                inspection_result = _inspect_operation(
                     echo,
                     op['op'],
                     committee_operations
@@ -76,14 +74,14 @@ def inspect_operation(echo, full_operation, committee_operations):
 
 
 def inspect_block_for_committee_operations(block_num):
-    echo, committee_operations = initialize_echo_committee_operations()
+    echo, committee_operations = _initialize_echo_committee_operations()
     block = echo.api.database.get_block(block_num)
     block_timestamp = block['timestamp']
     logs = []
     result = {}
     for tx in block['transactions']:
         for operation in tx['operations']:
-            inspection_result = inspect_operation(
+            inspection_result = _inspect_operation(
                 echo,
                 operation,
                 committee_operations
@@ -94,25 +92,25 @@ def inspect_block_for_committee_operations(block_num):
     return result
 
 
-def get_date(date):
+def _get_date(date):
     date = datetime.fromisoformat(date)
     return date.strftime("%Y%m%dT%H")
 
 
-def compare_date(date, first_log):
+def _compare_date(date, first_log):
     first_log = first_log[first_log.rfind("."):]
     first_log_date = datetime.strptime(first_log, "%Y%m%dT%H%M%S")
     date = datetime.fromisoformat(date)
     return first_log_date < date
 
 
-def get_logs(logs_dir, logs_from=None, length=math.inf):
+def get_echo_logs(logs_dir, logs_from=None, length=math.inf):
     logs_files = glob('./echo-logs/{}/*'.format(logs_dir))
     logs_files.sort()
     logs = []
     logs_files = logs_files[1:]
-    if logs_from and compare_date(logs_files[0]):
-        logs_from = get_date(logs_from)
+    if logs_from and _compare_date(logs_files[0]):
+        logs_from = _get_date(logs_from)
         for idx, log in enumerate(logs_files):
             if logs_from in log:
                 logs_files = logs_files[idx:]

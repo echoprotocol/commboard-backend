@@ -1,8 +1,7 @@
 import os
 import time
 import argparse
-from utils.db import get_influxdb_client, get_redis_client
-from utils.echo import get_echo_head_block_num
+from utils import get_influxdb_client, get_redis_client, get_echo_head_block_num
 
 
 def ping(client):

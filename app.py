@@ -1,5 +1,5 @@
 from flask import Flask
-from utils.celery import initialize_celery
+from utils import initialize_celery
 from config import REDIS_HOST, REDIS_PORT, CELERY_REDIS_DATABASE
 
 

@@ -1,6 +1,5 @@
-from utils.db import get_redis_client, get_influxdb_client
-from utils.echo import get_echo_node_uptime, get_echo_head_block_num,\
-    inspect_block_for_committee_operations
+from utils import get_redis_client, get_influxdb_client, get_echo_node_uptime,\
+    get_echo_head_block_num, inspect_block_for_committee_operations
 from app import celery
 
 

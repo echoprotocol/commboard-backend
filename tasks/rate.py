@@ -1,5 +1,4 @@
-from utils.db import get_redis_client
-from utils.coinmarketcap import get_rate
+from utils import get_redis_client, get_rate
 from app import celery
 
 

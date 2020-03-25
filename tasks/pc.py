@@ -1,6 +1,6 @@
 from datetime import datetime
 from psutil import cpu_percent, virtual_memory, disk_usage
-from utils.db import get_redis_client, get_influxdb_client
+from utils import get_redis_client, get_influxdb_client
 from app import celery
 
 
