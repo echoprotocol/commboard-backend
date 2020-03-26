@@ -1,6 +1,11 @@
 from flask import Flask
 from utils import initialize_celery
+from api import pc, get_cpu, get_ram, get_free_space, get_external_ip,\
+    exchange, get_eth_rate, get_btc_rate, node, get_logs
 from config import REDIS_HOST, REDIS_PORT, CELERY_REDIS_DATABASE
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from flask_apispec.extension import FlaskApiSpec
 
 
 app = Flask(__name__)
@@ -45,6 +50,27 @@ celery = initialize_celery(
 )
 
 
-@app.route('/')
-def hello_world():
-    return('Hello, World!')
+app.config.update({
+    'APISPEC_SPEC': APISpec(
+        title='PC',
+        version='v1',
+        openapi_version="3.0.2",
+        plugins=[MarshmallowPlugin()],
+    ),
+    'APISPEC_SWAGGER_URL': '/swagger/',
+})
+
+docs = FlaskApiSpec(app)
+
+app.register_blueprint(pc)
+docs.register(get_cpu, blueprint='pc')
+docs.register(get_ram, blueprint='pc')
+docs.register(get_free_space, blueprint='pc')
+docs.register(get_external_ip, blueprint='pc')
+
+app.register_blueprint(exchange)
+docs.register(get_eth_rate, blueprint='exchange')
+docs.register(get_btc_rate, blueprint='exchange')
+
+app.register_blueprint(node)
+docs.register(get_logs, blueprint='node')

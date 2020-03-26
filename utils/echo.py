@@ -93,36 +93,37 @@ def inspect_block_for_committee_operations(block_num):
 
 
 def _get_date(date):
-    date = datetime.fromisoformat(date)
+    # date = datetime.fromisoformat(date)
     return date.strftime("%Y%m%dT%H")
 
 
 def _compare_date(date, first_log):
-    first_log = first_log[first_log.rfind("."):]
+    first_log = first_log[first_log.rfind(".") + 1:]
     first_log_date = datetime.strptime(first_log, "%Y%m%dT%H%M%S")
-    date = datetime.fromisoformat(date)
+    # print(date)
+    # date = datetime.fromisoformat(date)
     return first_log_date < date
 
 
-def get_echo_logs(logs_dir, logs_from=None, length=math.inf):
+def get_echo_logs(logs_dir, from_date=None, quantity=math.inf):
     logs_files = glob('./echo-logs/{}/*'.format(logs_dir))
     logs_files.sort()
     logs = []
     logs_files = logs_files[1:]
-    if logs_from and _compare_date(logs_files[0]):
-        logs_from = _get_date(logs_from)
+    if from_date and _compare_date(from_date, logs_files[0]):
+        from_date = _get_date(from_date)
         for idx, log in enumerate(logs_files):
-            if logs_from in log:
+            if from_date in log:
                 logs_files = logs_files[idx:]
     for i in range(len(logs_files)):
         logs_file = open(logs_files[-(1 + i)])
         lines = logs_file.readlines()
-        if length < len(lines):
-            lines = lines[len(lines) - length:]
+        if quantity < len(lines):
+            lines = lines[len(lines) - quantity:]
             lines.extend(logs)
             logs = lines
             break
-        length -= len(lines)
+        quantity -= len(lines)
         lines.extend(logs)
         logs = lines
     return logs
