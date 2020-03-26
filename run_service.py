@@ -1,7 +1,7 @@
 import os
 import time
 import argparse
-from utils import get_influxdb_client, get_redis_client, get_echo_head_block_num
+from utils import get_influxdb_client, get_redis_client, get_echo_client, get_echo_head_block_num
 
 
 def ping(client):
@@ -13,7 +13,8 @@ def ping(client):
 
 def ping_echo():
     try:
-        return get_echo_head_block_num()
+        echo_client = get_echo_client()
+        return get_echo_head_block_num(echo_client)
     except Exception:
         return None
 

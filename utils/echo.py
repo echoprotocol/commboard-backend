@@ -12,9 +12,15 @@ def get_echo_client():
     return echo
 
 
-def get_echo_head_block_num():
-    echo = get_echo_client()
-    return echo.api.database.get_dynamic_global_properties()['head_block_number']
+def get_echo_head_block_num(echo, timestamp=False):
+    dynamic_global_properties = echo.api.database.get_dynamic_global_properties()
+    if timestamp:
+        return dynamic_global_properties['head_block_number'], dynamic_global_properties['time']
+    return dynamic_global_properties['head_block_number']
+
+
+def get_echo_active_committee_members(echo):
+    return echo.api.database.get_global_properties()['active_committee_members']
 
 
 def get_echo_node_uptime():
@@ -26,14 +32,13 @@ def get_echo_node_uptime():
     return timedelta.total_seconds() / 86400
 
 
-def _initialize_echo_committee_operations():
-    echo = get_echo_client()
+def _initialize_echo_committee_operations(echo):
     committee_operations = [
         echo.config.operation_ids.COMMITTEE_MEMBER_CREATE,
         echo.config.operation_ids.COMMITTEE_MEMBER_UPDATE,
         echo.config.operation_ids.COMMITTEE_MEMBER_UPDATE_GLOBAL_PARAMETERS,
-        echo.config.operation_ids.COMMITTEE_MEMBER_ACTIVATE,
-        echo.config.operation_ids.COMMITTEE_MEMBER_DEACTIVATE,
+        # echo.config.operation_ids.COMMITTEE_MEMBER_ACTIVATE,
+        # echo.config.operation_ids.COMMITTEE_MEMBER_DEACTIVATE,
         echo.config.operation_ids.COMMITTEE_FROZEN_BALANCE_DEPOSIT,
         echo.config.operation_ids.COMMITTEE_FROZEN_BALANCE_WITHDRAW,
         echo.config.operation_ids.PROPOSAL_CREATE,
@@ -52,7 +57,7 @@ def _initialize_echo_committee_operations():
         echo.config.operation_ids.SIDECHAIN_BTC_AGGREGATE,
         echo.config.operation_ids.SIDECHAIN_BTC_APPROVE_AGGREGATE
     ]
-    return echo, committee_operations
+    return committee_operations
 
 
 def _inspect_operation(echo, full_operation, committee_operations):
@@ -73,8 +78,8 @@ def _inspect_operation(echo, full_operation, committee_operations):
     return []
 
 
-def inspect_block_for_committee_operations(block_num):
-    echo, committee_operations = _initialize_echo_committee_operations()
+def inspect_block_for_committee_operations(echo, block_num):
+    committee_operations = _initialize_echo_committee_operations(echo)
     block = echo.api.database.get_block(block_num)
     block_timestamp = block['timestamp']
     logs = []
@@ -90,6 +95,31 @@ def inspect_block_for_committee_operations(block_num):
     if logs:
         result.update({block_timestamp: logs})
     return result
+
+
+def _compare_committee_members_lists(current, latest):
+    latest_set = set(latest)
+    current_set = set(current)
+    kicked = latest_set - current_set
+    new = current_set - latest_set
+    return kicked, new
+
+
+def check_active_committee_members_update(echo, timestamp, latest_active_committee_members,
+                                          current_active_committee_members):
+    kicked_committee_members, new_committee_members = _compare_committee_members_lists(
+        current_active_committee_members,
+        latest_active_committee_members
+    )
+
+    logs = {}
+    if kicked_committee_members:
+        logs.update({timestamp: 'Removed from active committee members list: {}'.format(kicked_committee_members)})
+
+    if new_committee_members:
+        logs.update({timestamp: 'Added to active committee members list: {}'.format(new_committee_members)})
+
+    return logs
 
 
 def _get_date(date):
