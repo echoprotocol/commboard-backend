@@ -36,14 +36,11 @@ if 'CELERY_REDIS_DATABASE' not in os.environ:
     raise Exception("Not found 'CELERY_REDIS_DATABASE' in environment")
 CELERY_REDIS_DATABASE = os.environ['CELERY_REDIS_DATABASE']
 
-if 'COINMARKETCAP_API_URL' not in os.environ:
-    raise Exception("Not found 'COINMARKETCAP_API_URL' in environment")
-COINMARKETCAP_API_URL = os.environ['COINMARKETCAP_API_URL']
+COINMARKETCAP_API_URL = 'https://pro-api.coinmarketcap.com/v1/'
 
 if 'COINMARKETCAP_API_KEY' not in os.environ:
     raise Exception("Not found 'COINMARKETCAP_API_KEY' in environment")
 COINMARKETCAP_API_KEY = os.environ['COINMARKETCAP_API_KEY']
-
 
 if 'ECHO_URL' not in os.environ:
     raise Exception("Not found 'ECHO_URL' in environment")
