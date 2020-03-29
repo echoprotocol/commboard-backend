@@ -5,18 +5,22 @@ from config import DATABASE_HOST, DATABASE_PORT, DATABASE_USER_NAME, DATABASE_US
 
 
 def get_influxdb_client():
-    return InfluxDBClient(
+    influxdb_client = InfluxDBClient(
         DATABASE_HOST,
         DATABASE_PORT,
         DATABASE_USER_NAME,
         DATABASE_USER_PASSWORD,
         DATABASE_NAME
     )
+    influxdb_client.ping()
+    return influxdb_client
 
 
 def get_redis_client():
-    return Redis(
+    redis_client = Redis(
         REDIS_HOST,
         REDIS_PORT,
         REDIS_DATABASE
     )
+    redis_client.ping()
+    return redis_client

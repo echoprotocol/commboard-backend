@@ -10,5 +10,5 @@ def update_currencies_rate():
         redis_client.set(
             asset.lower(),
             str(currencies_rate[asset]['quote']['USD']['price']),
-            ex=90
+            ex=9000
         )

@@ -1,1 +1,1 @@
-from api.exchange.routes import exchange, get_eth_rate, get_btc_rate
+from api.exchange.routes import exchange, get_rates

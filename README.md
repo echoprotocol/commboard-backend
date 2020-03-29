@@ -29,3 +29,5 @@ SERVICE_PORT | Port on which service should be running
 **`Stop:`**
 
 	$ docker-compose -f docker-compose-dev.yml down -v
+
+Swagger for this service placed by `<URL>/api/` url.

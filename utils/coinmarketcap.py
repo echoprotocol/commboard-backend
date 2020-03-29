@@ -26,5 +26,5 @@ def get_rate(currency='BTC,ETH', convert='USD'):
         return None
 
 
-def get_public_ip():
-    return requests.get("https://api.ipify.org").text
+def get_external_ip():
+    return requests.get('https://api.ipify.org').text

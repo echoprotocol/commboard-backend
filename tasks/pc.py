@@ -1,13 +1,13 @@
 from datetime import datetime
 from psutil import cpu_percent, virtual_memory, disk_usage
-from utils import get_redis_client, get_influxdb_client, get_public_ip
+from utils import get_redis_client, get_influxdb_client, get_external_ip
 from app import celery
 
 
 @celery.task()
 def update_pc_information():
     cpu, ram, free_space = cpu_percent(), virtual_memory()[2], disk_usage('.').free * 1e-9
-    public_ip = get_public_ip()
+    external_ip = get_external_ip()
     time = str(datetime.utcnow())
     influxdb_points = [
         {
@@ -33,8 +33,8 @@ def update_pc_information():
         ex=90
     )
     redis_client.set(
-        'public_ip',
-        public_ip,
+        'external_ip',
+        external_ip,
         ex=90
     )
 

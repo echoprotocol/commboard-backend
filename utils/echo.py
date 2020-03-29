@@ -4,6 +4,7 @@ from datetime import datetime
 from glob import glob
 from echopy import Echo
 from config import ECHO_URL
+import re
 
 
 def get_echo_client():
@@ -123,37 +124,95 @@ def check_active_committee_members_update(echo, timestamp, latest_active_committ
 
 
 def _get_date(date):
-    # date = datetime.fromisoformat(date)
-    return date.strftime("%Y%m%dT%H")
+    return date.strftime('%Y%m%dT%H')
+
+
+def _get_time(date):
+    return date.strftime('%H:%M:%S')
 
 
 def _compare_date(date, first_log):
-    first_log = first_log[first_log.rfind(".") + 1:]
-    first_log_date = datetime.strptime(first_log, "%Y%m%dT%H%M%S")
-    # print(date)
-    # date = datetime.fromisoformat(date)
+    first_log = first_log[first_log.rfind('.') + 1:]
+    first_log_date = datetime.strptime(first_log, '%Y%m%dT%H%M%S')
     return first_log_date < date
 
 
-def get_echo_logs(logs_dir, from_date=None, quantity=math.inf):
+def binary_search(logs, time, position=0, temp_value=0):
+    if not position:
+        position += len(logs) // 2
+        temp_value = position // 2 + 1
+        time = datetime.strptime(time, '%H:%M:%S')
+    time_from_logs = logs[position][:logs[position].find('.')]
+    time_from_logs = datetime.strptime(time_from_logs, '%H:%M:%S')
+
+    if time_from_logs > time:
+        position -= temp_value
+        temp_value = len(logs[position:position + temp_value]) // 2
+        if temp_value == 1:
+            return position + 1
+        return binary_search(logs, time, position, temp_value)
+
+    elif time_from_logs < time:
+        position += temp_value
+        temp_value = len(logs[position - temp_value:position]) // 2
+        if temp_value == 1:
+            return position + 1
+        return binary_search(logs, time, position, temp_value)
+
+    else:
+        time_from_logs = logs[position][:logs[position].find('.')]
+        time_from_logs = datetime.strptime(time_from_logs, '%H:%M:%S')
+        while time_from_logs == time:
+            position -= 1
+            time_from_logs = logs[position][:logs[position].find('.')]
+            time_from_logs = datetime.strptime(time_from_logs, '%H:%M:%S')
+    return position + 1
+
+
+def get_echo_logs(logs_dir, hours=None, quantity=math.inf):
     logs_files = glob('./echo-logs/{}/*'.format(logs_dir))
     logs_files.sort()
+    first_log = []
     logs = []
     logs_files = logs_files[1:]
-    if from_date and _compare_date(from_date, logs_files[0]):
-        from_date = _get_date(from_date)
-        for idx, log in enumerate(logs_files):
-            if from_date in log:
-                logs_files = logs_files[idx:]
-    for i in range(len(logs_files)):
-        logs_file = open(logs_files[-(1 + i)])
-        lines = logs_file.readlines()
-        if quantity < len(lines):
-            lines = lines[len(lines) - quantity:]
+    if logs_files:
+        if hours and _compare_date(hours, logs_files[0]):
+            time = _get_time(hours)
+            hours = _get_date(hours)
+            time_patern = re.compile('^[0-2][0-9]:[0-5][0-9]:[0-5][0-9]$')
+            for idx, log in enumerate(logs_files):
+                if hours in log:
+                    logs_file = open(log)
+                    lines = logs_file.readlines()
+
+                    processed_logs = []
+
+                    for index, log in enumerate(lines):
+                        if time_patern.match(log[:8]):
+                            processed_logs.append(log)
+                            continue
+                        processed_logs[-1] += log
+                    binc = binary_search(processed_logs, time)
+                    first_log = lines[binc:]
+                    logs_files = logs_files[idx + 1:]
+                    break
+        for i in range(len(logs_files)):
+            logs_file = open(logs_files[-(1 + i)])
+            lines = logs_file.readlines()
+            if quantity < len(lines):
+                first_log = []
+                lines = lines[len(lines) - quantity:]
+                lines.extend(logs)
+                logs = lines
+                break
+            quantity -= len(lines)
             lines.extend(logs)
             logs = lines
-            break
-        quantity -= len(lines)
-        lines.extend(logs)
-        logs = lines
+        if quantity > len(first_log):
+            first_log.extend(logs)
+            logs = first_log
+        else:
+            first_log = first_log[len(first_log) - quantity:]
+            first_log.extend(logs)
+            logs = first_log
     return logs
