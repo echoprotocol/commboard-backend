@@ -1,0 +1,49 @@
+stages:
+  - build
+  - deploy
+
+include:
+  - project: 'service/devops'
+    ref: master
+    file: 'build/backend/.gitlab-ci.yml'  
+
+.deploy:
+  stage: deploy
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+develop:
+  extends: .deploy
+  variables:
+    DOCKER_APP_INSTANCE: develop
+  environment:
+    name: develop
+    url: https://645-comboard.pixelplex-test.by/api
+  script:
+    - docker-compose pull
+    - MIGRATION_RESULT=$(docker-compose run migrate)
+    - export SIDECHAIN_ADDRESS=$(echo \"$MIGRATION_RESULT\" | perl -lne '/SideChain.*contract address:\s+(0x.{40})/ && print $1')
+    - sed -i "s/0xc87395b45C1c199F25a6c2Be43515C41d53751Af/$SIDECHAIN_ADDRESS/g" ./genesis.json
+    - docker-compose -p 645-comboard up -d ganache bitcoin echo influxdb redis web celery
+  only:
+    - develop
+  tags:
+    - pp-new-develop
+
+master:
+  extends: .deploy
+  variables:
+    DOCKER_APP_INSTANCE: master
+  environment:
+    name: develop
+    url: https://645-comboard.pixelplexlabs.com/api
+  script:
+    - docker-compose pull
+    - MIGRATION_RESULT=$(docker-compose run migrate)
+    - export SIDECHAIN_ADDRESS=$(echo \"$MIGRATION_RESULT\" | perl -lne '/SideChain.*contract address:\s+(0x.{40})/ && print $1')
+    - sed -i "s/0xc87395b45C1c199F25a6c2Be43515C41d53751Af/$SIDECHAIN_ADDRESS/g" ./genesis.json
+    - docker-compose -p 645-comboard up -d ganache bitcoin echo influxdb redis web celery
+  only:
+    - master
+  tags:
+    - pp-stage

@@ -27,5 +27,5 @@ args = parser.parse_args()
 run(
     get_influxdb_client,
     get_redis_client,
-    'flask run --host=0.0.0.0 --port=5000' if args.service == 'web' else 'celery -A app.celery worker -l debug -B'
+    'flask run --host=0.0.0.0 --port=5000' if args.service == 'web' else 'celery -A app.celery worker -l info -B'
 )
